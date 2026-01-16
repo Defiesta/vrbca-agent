@@ -21,8 +21,27 @@
 use anyhow::Result;
 use tracing::debug;
 
-/// Re-export the funding model from core for consistency
-pub use core::strategy::FundingModel;
+/// Stub funding model for testing
+#[derive(Debug, Clone)]
+pub struct FundingModel {
+    pub weights: [i128; 3],
+    pub bias: i128,
+    pub min_r_squared: u64,
+}
+
+impl FundingModel {
+    pub fn default_model() -> Self {
+        Self {
+            weights: [8000, -2000, -500],
+            bias: 1000,
+            min_r_squared: 6000,
+        }
+    }
+
+    pub fn predict_funding_persistence(&self, _funding_rate: i128, _volatility: u64, _time_factor: u64) -> (i128, u64) {
+        (self.bias, self.min_r_squared)
+    }
+}
 
 /// Extended funding model with historical data management
 pub struct ExtendedFundingModel {
