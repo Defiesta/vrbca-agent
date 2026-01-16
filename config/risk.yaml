@@ -1,0 +1,171 @@
+# VRBCA Risk Configuration
+# This file defines risk limits and constraints for the Verifiable Risk-Bound Basis Capture Agent
+
+# Global Risk Limits
+risk_limits:
+  # Maximum leverage across all positions (basis points, 20000 = 2.0x)
+  max_leverage_bps: 20000
+  
+  # Maximum net delta exposure as percentage of portfolio (basis points, 100 = 1%)
+  max_net_delta_bps: 100
+  
+  # Maximum drawdown from peak value (basis points, 2000 = 20%)
+  max_drawdown_bps: 2000
+  
+  # Maximum position size per asset (basis points, 4000 = 40%)
+  max_position_size_bps: 4000
+  
+  # Minimum capital reserve (basis points, 1000 = 10%)
+  min_capital_reserve_bps: 1000
+  
+  # Maximum correlation between positions (-10000 to 10000)
+  max_position_correlation: 3000
+
+# Asset-Specific Risk Parameters
+asset_risk:
+  ETH:
+    # Risk multiplier (10000 = 1.0x base risk)
+    risk_multiplier: 10000
+    # Maximum position size (basis points)
+    max_position_bps: 4000
+    # Volatility estimate for VaR calculations (basis points)
+    daily_volatility_bps: 2000
+    
+  BTC:
+    risk_multiplier: 12000  # 20% higher risk
+    max_position_bps: 3000  # Smaller position limit
+    daily_volatility_bps: 2500
+
+# Venue-Specific Risk Parameters
+venue_risk:
+  BINANCE:
+    # Maximum leverage on this venue
+    max_leverage_bps: 20000
+    # Maximum position size as % of total capital
+    max_position_size_bps: 5000
+    # Counterparty risk limit (USD, scaled by 1e6)
+    counterparty_limit: 1000000_000000
+    # Maximum slippage tolerance (basis points)
+    max_slippage_bps: 100
+    
+  UNISWAP:
+    max_leverage_bps: 10000  # No leverage on DEX
+    max_position_size_bps: 3000
+    counterparty_limit: 18446744073709551615  # No counterparty risk (max u64)
+    max_slippage_bps: 200
+
+# Dynamic Risk Adjustments
+dynamic_risk:
+  # Volatility-based adjustments
+  volatility_adjustments:
+    # Reduce position sizes when volatility is high
+    high_vol_threshold_bps: 3000  # 30% daily volatility
+    high_vol_position_reduction: 50  # Reduce positions by 50%
+    
+    # Increase margins when volatility is extreme
+    extreme_vol_threshold_bps: 5000  # 50% daily volatility
+    extreme_vol_margin_increase: 100  # Double margin requirements
+  
+  # Liquidity-based adjustments
+  liquidity_adjustments:
+    # Minimum liquidity thresholds
+    min_liquidity_usd: 100000_000000  # $100K minimum
+    low_liquidity_threshold: 50000_000000  # $50K warning level
+    low_liquidity_position_reduction: 25  # 25% reduction
+
+# Emergency Risk Controls
+emergency_controls:
+  # Circuit breakers
+  circuit_breakers:
+    # Maximum daily loss before halt (basis points)
+    max_daily_loss_bps: 500  # 5% daily loss limit
+    
+    # Maximum position loss before halt (basis points)  
+    max_position_loss_bps: 1000  # 10% position loss limit
+    
+    # Minimum portfolio value before halt (USD)
+    min_portfolio_value: 50000_000000  # $50K minimum
+  
+  # Oracle failure responses
+  oracle_failures:
+    # Maximum price deviation before halt (basis points)
+    max_price_deviation_bps: 500  # 5% deviation
+    
+    # Maximum staleness before halt (seconds)
+    max_staleness_secs: 3600  # 1 hour
+    
+    # Minimum number of oracle sources required
+    min_oracle_sources: 2
+  
+  # Venue-specific failures
+  venue_failures:
+    # Maximum API downtime before halt (seconds)
+    max_api_downtime_secs: 600  # 10 minutes
+    
+    # Maximum execution failure rate before halt (basis points)
+    max_failure_rate_bps: 1000  # 10% failure rate
+
+# Risk Monitoring
+monitoring:
+  # Risk metrics calculation frequency
+  risk_calc_interval_secs: 300  # 5 minutes
+  
+  # Performance monitoring
+  performance_monitoring:
+    # Sharpe ratio calculation window (days)
+    sharpe_window_days: 30
+    
+    # Maximum acceptable Sharpe ratio decline
+    max_sharpe_decline: 50  # 50% decline from peak
+    
+    # Minimum acceptable win rate (basis points)
+    min_win_rate_bps: 4000  # 40% win rate
+
+# Risk Model Parameters
+risk_models:
+  # Value at Risk (VaR) configuration
+  var_config:
+    # Confidence level (basis points, 9500 = 95%)
+    confidence_level_bps: 9500
+    
+    # Time horizon (days)
+    time_horizon_days: 1
+    
+    # Historical lookback period (days)
+    lookback_days: 252
+  
+  # Stress testing scenarios
+  stress_tests:
+    # Market crash scenario (-20% ETH price)
+    market_crash:
+      eth_price_change: -2000  # -20% in basis points
+      expected_max_loss_bps: 400  # 4% max loss expected
+    
+    # Funding rate spike scenario (500 bps funding)
+    funding_spike:
+      funding_rate_change: 50000  # 500% annual increase
+      expected_impact_bps: 100  # 1% expected impact
+
+# Compliance and Reporting
+compliance:
+  # Reporting intervals
+  reporting:
+    # Risk report frequency (seconds)
+    risk_report_interval: 3600  # Hourly
+    
+    # Performance report frequency (seconds)  
+    performance_report_interval: 86400  # Daily
+    
+    # Compliance check frequency (seconds)
+    compliance_check_interval: 300  # 5 minutes
+  
+  # Audit trail requirements
+  audit_trail:
+    # Retain risk metrics for this many days
+    retention_days: 365
+    
+    # Log all risk limit breaches
+    log_breaches: true
+    
+    # Require justification for risk limit changes
+    require_justification: true

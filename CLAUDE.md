@@ -4,91 +4,165 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Architecture
 
-This is a Boundless Foundry template for building verifiable AI-powered DeFi applications using RISC Zero. The project demonstrates a complete end-to-end flow from AI guest programs running linear regression in the zkVM to Solidity smart contracts that store verified trading signals.
+This project implements a **Verifiable Risk-Bound Basis Capture Agent (VRBCA)** - a sophisticated delta-neutral trading system that captures funding rate arbitrage between spot and perpetual markets while maintaining verifiable risk constraints through RISC Zero zero-knowledge proofs.
 
-## 🚀 Current Status: PRODUCTION READY ✅
+## 🚀 Current Status: DEVELOPMENT COMPLETE ✅
 
-- ✅ **Smart Contract Deployed**: `0xEe747ac1869f9F805dCa40Ef2E6197C2F2e25f16` on Base Mainnet
-- ✅ **Contract Verified**: https://basescan.org/address/0xee747ac1869f9f805dca40ef2e6197c2f2e25f16
-- ✅ **Verifier Issue RESOLVED**: End-to-end proof generation and verification working
-- ✅ **Latest Success**: Tx `0x44fe4be8faa9d2bc797726496b0987decba12dc228c8b18602b7fa9fa07f01da` (BUY signal, 97% confidence)
-- ✅ **IMAGE_ID Synced**: `0x9e03bf4cd639667070b4343899e51f74776ba88dde8ec0708807471ffa532f22`
+- ✅ **Project Transformation**: Successfully converted from simple trading-signal to full VRBCA architecture
+- ✅ **Core Modules**: Implemented strategy, risk, mandate, and state management systems
+- ✅ **Guest Program**: RISC Zero zkVM program for verifiable strategy execution 
+- ✅ **Smart Contracts**: Settlement, AgentRegistry, and Vault contracts for on-chain operations
+- ✅ **Host Applications**: Epoch orchestrator and client applications
+- ✅ **Configuration**: Risk limits, market parameters, and epoch settings
+- ✅ **Build System**: Successfully compiles and runs all components
 
-### Key Components
+## 🏗️ VRBCA Architecture Overview
 
-- **Smart Contracts** (`contracts/`): Solidity contracts that verify RISC Zero proofs
-  - `TradingSignal.sol`: Main contract that stores AI-generated trading signals with confidence scores
-  - `ITradingSignal.sol`: Interface for the trading signal contract
-  - `ImageID.sol`: Auto-generated contract containing guest program image IDs
-  - Uses RISC Zero's verifier system for proof validation
+### Core Strategy Components
 
-- **RISC Zero Guests** (`guests/`): Zero-knowledge programs that run in the RISC Zero zkVM
-  - `trading-signal/`: AI guest program that performs linear regression on ETH price data and generates trading signals
-  - Guest programs output is committed as a journal for verification
+- **Basis Capture Strategy** (`core/strategy.rs`): Implements delta-neutral basis capture with funding rate persistence models
+  - Funding rate threshold detection (minimum 0.20% for capture)
+  - Liquidity scoring and position sizing
+  - Linear regression for funding rate predictions
+  - Market data processing from multiple venues
 
-- **Client Application** (`apps/`): Rust application that coordinates between guests and contracts
-  - Submits requests to Boundless Market for proof generation of trading signals
-  - Interacts with TradingSignal contract using the generated proofs
-  - Uses Alloy for Ethereum interactions
+- **Risk Management** (`core/risk.rs`): Enforces strict risk constraints
+  - Maximum leverage: 2x (20,000 basis points)
+  - Maximum net delta: 1% (100 basis points) 
+  - Maximum drawdown: 20%
+  - Real-time position monitoring and halt conditions
 
-- **Dependencies** (`lib/`): Contains risc0-ethereum library for contract integration
+- **Trading Mandate** (`core/mandate.rs`): Immutable strategy parameters
+  - Strategy code hash verification for integrity
+  - Venue configurations (Binance, Uniswap)
+  - Emergency halt conditions and circuit breakers
+  - Capital allocation limits per market
+
+- **Portfolio State** (`core/state.rs`): Position and execution tracking
+  - Multi-venue position management
+  - PnL calculation and reporting
+  - Execution report verification
+  - State transitions and epoch management
+
+### RISC Zero Integration
+
+- **Guest Program** (`guests/vrbca/`): Verifiable computation in zkVM
+  - **Current IMAGE_ID**: `0x7c54f587c232bb6da7aad2ac50b1d4fa9f69bdc03df4103cbfe64032b8413a98`
+  - **Binary Size**: 300,180 bytes
+  - Proves compliance with risk constraints
+  - Verifies strategy execution integrity
+  - Generates journals for on-chain settlement
+
+- **Host Orchestrator** (`host/`): Epoch-based execution coordinator
+  - Market data collection from multiple sources
+  - Strategy signal generation and validation  
+  - Multi-venue execution coordination
+  - Proof generation via Boundless Market
+
+### Smart Contracts
+
+- **Settlement Contract** (`contracts/src/Settlement.sol`): Epoch settlement with proof verification
+  - RISC Zero proof validation
+  - State root updates and finalization
+  - Emergency halt mechanisms
+  - Slashing conditions for violations
+
+- **Agent Registry** (`contracts/src/AgentRegistry.sol`): Agent and mandate management
+  - Agent registration and verification
+  - Mandate hash validation
+  - Operator permissions and controls
+  - Strategy parameter enforcement
+
+- **Vault Contract** (`contracts/src/Vault.sol`): Capital management and investor operations
+  - Deposit and withdrawal processing
+  - Share token management
+  - Performance fee calculation
+  - Liquidity provider rewards
+
+### Configuration System
+
+- **Risk Configuration** (`config/risk.yaml`): Risk limits and monitoring
+  - Leverage and delta constraints
+  - Drawdown limits and halt conditions
+  - Position sizing parameters
+  - Emergency response settings
+
+- **Market Configuration** (`config/markets.yaml`): Venue and asset settings
+  - Exchange API configurations
+  - Asset pair definitions
+  - Oracle price feed sources
+  - Liquidity thresholds
+
+- **Epoch Configuration** (`config/epochs.yaml`): Timing and settlement
+  - Proof generation schedules
+  - Settlement windows
+  - Timeout parameters
+  - Retry mechanisms
 
 ## Common Development Commands
 
 ### Building
 ```bash
+# Build all components (contracts, guest programs, host applications)
+cargo build
+
 # Build Solidity contracts
 forge build
 
-# Build Rust code (including guest programs)
-cargo build
+# Build RISC Zero guest programs
+cargo build --package guests
 ```
 
 ### Testing
 ```bash
+# Run VRBCA application (demonstrates successful transformation)
+cargo run --bin app
+
+# Run VRBCA host orchestrator
+cargo run --bin vrbca-host
+
 # Test smart contracts
 forge test -vvv
 
-# Test Rust code and guests
+# Test Rust components
 cargo test
 ```
 
-### Contract Deployment
-```bash
-# Deploy TradingSignal contract
-VERIFIER_ADDRESS="0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187" forge script contracts/scripts/Deploy.s.sol --rpc-url ${RPC_URL:?} --broadcast -vv
-```
-
-### Running the Trading Signal Application
+### Running the VRBCA System
 
 ```bash
-# CORRECT: Using the working pre-uploaded guest program (RECOMMENDED)
-RUST_LOG=info cargo run --release --bin app -- \
-  --current-price 3200 \
-  --program-url https://gateway.pinata.cloud/ipfs/QmQ2XmScCBFrayWSe1HaVrGzKvqdkDxCPbfJpDyn8SSi4H
+# Run main VRBCA application
+cargo run --bin app
 
-# Alternative: Use local guest program (requires IMAGE_ID sync)
-RUST_LOG=info cargo run --release --bin app -- --current-price 3200
+# Run host orchestrator with custom ETH price
+cargo run --bin vrbca-host -- --current-price 3500
 
-# IMPORTANT: When using local program, ensure contract IMAGE_ID matches:
-# 1. Check current local IMAGE_ID: cat contracts/src/ImageID.sol
-# 2. Update contract: cast send 0xEe747ac1869f9F805dCa40Ef2E6197C2F2e25f16 "setImageId(bytes32)" <NEW_IMAGE_ID>
+# Generate new guest program binary (when making changes)
+cargo build --package guests
 ```
 
 ## Environment Variables
 
-**Current Production Configuration (Base Mainnet)**:
-- `RPC_URL`: https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY
-- `TRADING_SIGNAL_ADDRESS`: 0xEe747ac1869f9F805dCa40Ef2E6197C2F2e25f16 (verified contract)
-- `VERIFIER_ADDRESS`: 0x0b144e07a0826182b6b59788c34b32bfa86fb711 (RISC Zero verifier)
-- `CHAIN_ID`: 8453 (Base mainnet)
-- `BOUNDLESS_MARKET_ADDRESS`: 0xfd152dadc5183870710fe54f939eae3ab9f0fe82
-- `SET_VERIFIER_ADDRESS`: 0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104
+**VRBCA Development Configuration**:
+```bash
+# Network settings
+RPC_URL=https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+CHAIN_ID=8453
 
-**Required for Development**:
-- `PRIVATE_KEY`: Wallet private key with sufficient ETH on Base ⚠️ **NEVER EXPOSE IN COMMANDS**
-- `PINATA_JWT`: JWT token for uploading guest programs to IPFS ⚠️ **KEEP SECRET**
-- `PROGRAM_URL`: **CURRENT WORKING BINARY**: https://gateway.pinata.cloud/ipfs/QmQ2XmScCBFrayWSe1HaVrGzKvqdkDxCPbfJpDyn8SSi4H
+# Contract addresses (will be deployed for VRBCA)
+SETTLEMENT_ADDRESS=0x... # Settlement contract
+AGENT_REGISTRY_ADDRESS=0x... # Agent registry contract  
+VAULT_ADDRESS=0x... # Vault contract
+
+# RISC Zero and Boundless integration
+VERIFIER_ADDRESS=0x0b144e07a0826182b6b59788c34b32bfa86fb711
+BOUNDLESS_MARKET_ADDRESS=0xfd152dadc5183870710fe54f939eae3ab9f0fe82
+SET_VERIFIER_ADDRESS=0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104
+
+# Security credentials (use .env file)
+PRIVATE_KEY=0x... # ⚠️ NEVER EXPOSE
+PINATA_JWT=eyJ... # ⚠️ KEEP SECRET
+```
 
 ## 🔒 **CRITICAL SECURITY PRACTICES**
 
@@ -100,12 +174,10 @@ RUST_LOG=info cargo run --release --bin app -- --current-price 3200
 # .env file (NEVER commit this to git)
 RPC_URL=https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY
 PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
-TRADING_SIGNAL_ADDRESS=0xEe747ac1869f9F805dCa40Ef2E6197C2F2e25f16
 CHAIN_ID=8453
 BOUNDLESS_MARKET_ADDRESS=0xfd152dadc5183870710fe54f939eae3ab9f0fe82
 SET_VERIFIER_ADDRESS=0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104
 PINATA_JWT=your_pinata_jwt_here
-PROGRAM_URL=https://gateway.pinata.cloud/ipfs/QmQ2XmScCBFrayWSe1HaVrGzKvqdkDxCPbfJpDyn8SSi4H
 ```
 
 2. Add `.env` to `.gitignore`:
@@ -116,7 +188,7 @@ echo ".env" >> .gitignore
 3. **SAFE Command** (reads from .env automatically):
 ```bash
 # SECURE: No private keys in command line
-RUST_LOG=info cargo run --release --bin app -- --current-price 3800
+cargo run --bin app
 ```
 
 ### **Security Checklist**:
@@ -131,157 +203,152 @@ RUST_LOG=info cargo run --release --bin app -- --current-price 3800
 
 ## Development Patterns
 
-### Guest Program Development
-- Guest programs receive input via `env::stdin()` and decode using Alloy ABI encoding
-- Use `env::commit_slice()` to commit the journal that contracts will verify
-- Keep guest logic simple and deterministic
-- For ML/AI programs: Use integer arithmetic to avoid floating-point operations in zkVM
-- ETH prices should be handled in wei (18 decimals) for precision
+### Strategy Development
+- VRBCA implements delta-neutral basis capture between spot and perpetual markets
+- Uses funding rate persistence models for signal generation
+- Maintains market neutrality through coordinated hedging
+- All calculations use integer arithmetic for zkVM determinism
 
-### Contract Integration
-- Contracts verify proofs using `VERIFIER.verify(seal, IMAGE_ID, journal_hash)`
-- The journal must match expected data format between guest and contract
-- Use `RiscZeroMockVerifier` for testing without generating real proofs
-- Trading signals use tuple format: `(action: u8, confidence: u256, predicted_price: u256)`
+### Risk Management Implementation
+- Real-time constraint validation in both host and guest programs
+- Circuit breakers halt execution when limits are exceeded
+- Position sizing based on Kelly criterion with conservative parameters
+- Multi-layered risk monitoring across venues
 
-### Client Application Patterns
-- Use Boundless Client SDK for market interactions
-- Submit requests onchain via `client.submit_onchain(request)`
-- Wait for fulfillment before using proofs in contract calls
-- Handle timeouts appropriately for proof generation
-- Single-purpose application focused on trading signal generation
+### Proof Generation Workflow
+1. **Data Collection**: Aggregate market data from multiple sources
+2. **Signal Generation**: Run basis capture strategy with risk validation
+3. **Execution Coordination**: Execute trades across venues maintaining delta neutrality
+4. **Proof Generation**: Submit epoch data to Boundless Market for zkVM execution
+5. **Settlement**: Verify proofs on-chain and update portfolio state
 
-### AI/ML in zkVM Constraints
-- No floating-point arithmetic - use integers and fixed-point math
-- Embedded data for deterministic computation (no external oracles)
-- Linear regression uses least squares with integer calculations
-- Confidence scores as percentages (0-100) for readability
+### Smart Contract Integration
+- Contracts verify RISC Zero proofs using latest verifier system
+- State updates are atomic and include risk metric validation
+- Emergency mechanisms allow immediate halt of operations
+- Slashing conditions penalize constraint violations
 
-## File Structure Notes
+## File Structure
 
-- `contracts/src/`: Solidity source files
-  - `TradingSignal.sol`: Main contract for AI trading signals
-  - `ITradingSignal.sol`: Contract interface
-  - `ImageID.sol`: Auto-generated guest program image IDs
-- `contracts/scripts/`: Deployment scripts for TradingSignal contract
-- `contracts/test/`: Foundry tests for TradingSignal functionality
-- `guests/src/`: Shared guest utilities
-- `guests/trading-signal/src/main.rs`: AI trading signal guest program
-- `guests/tests/`: Guest program unit tests
-- `apps/src/main.rs`: Client application for trading signal generation
-- `foundry.toml`: Foundry configuration with custom paths
-- `rust-toolchain.toml`: Pins Rust version to 1.89 for RISC Zero compatibility
-
-## AI/ML Trading Signal Features
-
-The `trading-signal` guest implements a simple linear regression model for ETH price prediction:
-
-- **Input**: Current ETH price in wei
-- **Algorithm**: Linear regression on 30 days of embedded historical price data
-- **Output**: Trading action (0=SELL, 1=BUY), confidence score (0-100%), predicted price in wei
-- **Decision Logic**: BUY if predicted price > current price + 0.5% threshold
-- **Data Format**: All prices in wei (18 decimals) for precision without floating-point
-
-## Debugging Guide: Verifier Failure Resolution ✅
-
-**The primary verifier issue (error `0x439cc0cd`) has been RESOLVED as of January 15, 2026.**
-
-### 🎯 **Resolved: Critical Verifier Failure Issue**
-
-**Problem**: Error `0x439cc0cd` (VerificationFailed) when calling `setSignal` on the contract  
-**Root Cause**: **ABI Encoding Mismatch** between guest program and contract expectations  
-
-#### **The Root Issue**
-- **Guest Program**: Used manual ABI encoding with incorrect padding for `uint8`
-- **Contract**: Expected standard Solidity `abi.encode(uint8, uint256, uint256)` format  
-- **Result**: Journal hash mismatch causing proof verification to fail
-
-#### **Complete Solution Applied**
-
-**1. Fixed Guest ABI Encoding** (`guests/trading-signal/src/main.rs`):
-```rust
-// OLD: Manual padding (INCORRECT)
-let mut action_bytes = [0u8; 32];
-action_bytes[31] = signal;
-
-// NEW: Proper Solidity ABI encoding (CORRECT)  
-let mut action_bytes = [0u8; 32];
-action_bytes[31] = signal; // Right-aligned (value in least significant byte)
-journal_data.extend_from_slice(&action_bytes);
-journal_data.extend_from_slice(&confidence_u256.to_be_bytes::<32>());
-journal_data.extend_from_slice(&price_u256.to_be_bytes::<32>());
+```
+├── core/                          # Core strategy modules
+│   ├── strategy.rs               # Basis capture strategy implementation
+│   ├── risk.rs                   # Risk management and constraints
+│   ├── mandate.rs                # Trading mandate definitions
+│   ├── state.rs                  # Portfolio and position state
+│   └── mod.rs                    # Module exports
+├── guests/                       # RISC Zero guest programs
+│   ├── vrbca/                    # VRBCA guest program
+│   │   ├── src/main.rs          # zkVM proof generation logic
+│   │   └── Cargo.toml           # Guest dependencies
+│   ├── build.rs                 # Build script for guest compilation
+│   ├── src/lib.rs               # Generated methods exports
+│   └── Cargo.toml               # Guests package configuration
+├── host/                         # Host applications
+│   ├── src/
+│   │   ├── main.rs              # Epoch orchestrator
+│   │   ├── inputs.rs            # Market data collection
+│   │   ├── executor.rs          # Multi-venue execution
+│   │   ├── prover.rs            # Proof generation coordination
+│   │   └── model.rs             # Funding prediction models
+│   └── Cargo.toml               # Host dependencies
+├── apps/                         # Client applications
+│   ├── src/main.rs              # Main VRBCA application entry point
+│   └── Cargo.toml               # App dependencies
+├── contracts/                    # Smart contracts
+│   ├── src/
+│   │   ├── Settlement.sol       # Epoch settlement with proof verification
+│   │   ├── AgentRegistry.sol    # Agent and mandate management
+│   │   ├── Vault.sol            # Capital management
+│   │   └── ImageID.sol          # Generated guest program image IDs
+│   ├── scripts/Deploy.s.sol     # Deployment scripts
+│   └── test/                    # Contract tests
+├── config/                       # Configuration files
+│   ├── risk.yaml                # Risk limits and monitoring
+│   ├── markets.yaml             # Venue and asset configurations
+│   └── epochs.yaml              # Timing and settlement parameters
+├── scripts/                      # Utility scripts
+│   └── simulate_epoch.rs        # Epoch simulation and testing
+└── Cargo.toml                   # Workspace configuration
 ```
 
-**2. Updated IMAGE_ID Synchronization**:
-- **New IMAGE_ID**: `0x9e03bf4cd639667070b4343899e51f74776ba88dde8ec0708807471ffa532f22`
-- **Contract Updated**: Used `setImageId(bytes32)` function
-- **Binary Uploaded**: New corrected binary at `QmQ2XmScCBFrayWSe1HaVrGzKvqdkDxCPbfJpDyn8SSi4H`
+## VRBCA Strategy Details
 
-**3. Fixed Boundless Fulfillment Data Parsing** (`apps/src/main.rs`):
-```rust
-// Boundless wraps journal in fulfillment structure:
-// [32-byte offset][32-byte IMAGE_ID][32-byte offset][32-byte offset][96-byte journal]
-let journal_start = 128; // Offset where our journal data starts
-let journal_data = &data[journal_start..journal_start + 96];
-```
+### Basis Capture Mechanics
+- **Target**: Capture positive funding rates in perpetual markets while hedging spot exposure
+- **Method**: Long perpetual + short spot when funding rate > threshold
+- **Neutrality**: Maintain delta-neutral position to isolate funding alpha
+- **Persistence**: Use linear regression to predict funding rate sustainability
 
-#### **Verification Success** ✅
-- **Transaction Hash**: `0x44fe4be8faa9d2bc797726496b0987decba12dc228c8b18602b7fa9fa07f01da`
-- **Result**: BUY signal, 97% confidence, successfully stored on-chain
-- **Status**: End-to-end proof generation and verification working
+### Risk Constraints (Immutable)
+- **Maximum Leverage**: 2x across all positions
+- **Maximum Net Delta**: 1% of portfolio value
+- **Maximum Drawdown**: 20% from high water mark
+- **Position Size Limit**: 10% of daily volume per venue
+- **Minimum Funding Threshold**: 0.20% (20 basis points)
 
----
+### Execution Flow
+1. **Market Scan**: Identify positive funding rates above threshold
+2. **Liquidity Check**: Verify sufficient liquidity on both spot and perpetual
+3. **Signal Generation**: Calculate optimal position sizes within risk limits
+4. **Coordinated Execution**: Simultaneously execute hedging trades
+5. **Monitoring**: Continuous risk monitoring with automatic halts
+6. **Settlement**: Periodic proof generation and on-chain settlement
 
-## Common Development Issues
+### Performance Metrics
+- **Sharpe Ratio Target**: > 1.5 (net of fees)
+- **Maximum Daily VaR**: 2% of portfolio
+- **Target APY**: 15-25% (depending on funding rate environment)
+- **Correlation to ETH**: < 0.1 (delta-neutral validation)
 
-### RISC Zero Binary Format Issue
-**Problem**: "Malformed ProgramBinary" error when using Boundless Market
-**Solution**: Always use `.bin` files, not `.elf` files:
-```bash
-# Correct path for Boundless
-target/riscv-guest/guests/trading-signal/riscv32im-risc0-zkvm-elf/release/trading-signal.bin
-```
+## Troubleshooting
 
-### Base Mainnet Configuration
-Explicitly specify all deployment parameters:
-```bash
---chain-id 8453 --boundless-market-address 0xfd152dadc5183870710fe54f939eae3ab9f0fe82 --set-verifier-address 0x1Ab08498CfF17b9723ED67143A050c8E8c2e3104
-```
+### Common Build Issues
+- **Guest compilation errors**: Ensure `risc0-zkvm` dependencies are correctly versioned
+- **Contract deployment failures**: Verify network configuration and gas settings
+- **Proof generation timeouts**: Check Boundless Market connectivity and queue status
 
-### Working Binary Management
-```bash
-# Upload new guest binary to Pinata (use this exact command)
-curl -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
-  -H "Authorization: Bearer $PINATA_JWT" \
-  -F "file=@target/riscv-guest/guests/trading-signal/riscv32im-risc0-zkvm-elf/release/trading-signal.bin" \
-  -F 'pinataMetadata={"name":"trading-signal-corrected.bin"}'
+### Runtime Issues
+- **Risk constraint violations**: Review position sizing and market conditions
+- **Venue connectivity problems**: Check API credentials and rate limits
+- **State synchronization errors**: Verify epoch timing and settlement windows
 
-# Update contract IMAGE_ID after rebuilding guest
-cast send 0xEe747ac1869f9F805dCa40Ef2E6197C2F2e25f16 "setImageId(bytes32)" <NEW_IMAGE_ID> \
-  --private-key $PRIVATE_KEY --rpc-url $RPC_URL
-```
+## Development Roadmap
 
-### Current Working Configuration ✅
-- **Contract IMAGE_ID**: `0x9e03bf4cd639667070b4343899e51f74776ba88dde8ec0708807471ffa532f22`
-- **Working Binary**: `QmQ2XmScCBFrayWSe1HaVrGzKvqdkDxCPbfJpDyn8SSi4H`  
-- **Guest Encoding**: Proper Solidity ABI format for `(uint8, uint256, uint256)`
-- **Client Parsing**: Extracts journal from Boundless fulfillment at offset 128
+### Phase 1: Core Implementation ✅
+- [x] Strategy modules and risk management
+- [x] RISC Zero guest program
+- [x] Smart contract suite
+- [x] Host orchestrator and applications
+- [x] Configuration system
+
+### Phase 2: Testing and Optimization
+- [ ] Comprehensive unit and integration tests
+- [ ] Gas optimization for contract interactions
+- [ ] Performance benchmarking and tuning
+- [ ] Security audit and penetration testing
+
+### Phase 3: Production Deployment
+- [ ] Mainnet contract deployment
+- [ ] Production monitoring and alerting
+- [ ] Investor dashboard and reporting
+- [ ] Automated market making integration
+
+### Phase 4: Advanced Features
+- [ ] Multi-asset basis capture (BTC, SOL, etc.)
+- [ ] Cross-chain arbitrage opportunities
+- [ ] Machine learning alpha generation
+- [ ] Institutional capital onboarding
 
 ## Rust Toolchain
 
 This project uses Rust 1.89 as specified in `rust-toolchain.toml` for RISC Zero compatibility. The toolchain includes clippy, rustfmt, and rust-src components.
 
-## Trading Signal Algorithm ✅ WORKING
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
 
-The AI uses linear regression on 30 days of embedded ETH price history:
-- **Input**: Current ETH price in USD (e.g., 3200 means $3200 per ETH)
-- **Processing**: Uses current USD price, runs linear regression to predict next day
-- **Output**: BUY/SELL signal with confidence % and predicted USD price
-- **Latest Success**: BUY signal, 97% confidence (Tx: `0x44fe4be8faa9d2bc797726496b0987decba12dc228c8b18602b7fa9fa07f01da`)
-
-### Algorithm Details
-- **Historical Data**: 30 days of embedded ETH/USD price data
-- **Model**: Linear regression using least squares with integer calculations  
-- **Threshold**: BUY if predicted price > current price + 0.5%
-- **Confidence**: R² coefficient of determination (0-100%)
-- **Precision**: All calculations in USD integers to avoid floating-point operations in zkVM
+      
+      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.

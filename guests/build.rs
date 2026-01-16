@@ -39,7 +39,7 @@ fn main() {
 
     // Generate Rust source files for the methods crate.
     let guests = embed_methods_with_options(HashMap::from([
-        ("trading-signal", guest_options),
+        ("vrbca", guest_options),
     ]));
 
     // Generate Solidity source files for use with Forge.
